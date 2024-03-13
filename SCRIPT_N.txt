@@ -1,0 +1,75 @@
+option (noredefine);
+LIB "solve.lib";
+option (redSB);
+ring r = 0, (x, e, R), dp;
+poly OBJ =
+  -25940329 * R ** 3 * e * x ** 2 - 61451313 * R ** 3 * x ** 4 +
+  65640150 * R ** 3 * x ** 2 - 28577961 * R ** 3 +
+  81961639 * R ** 2 * e * x ** 2 + 1099859207 * R ** 2 * x ** 4 -
+  811868595 * R ** 2 * x ** 2 + 205761316 * R ** 2 +
+  342231572 * R * e * x ** 2 - 5233649558 * R * x ** 4 +
+  3595948148 * R * x ** 2 - 555555556 * R - 1960143305 * e * x ** 2 +
+  200000000 * e + 8467967598 * x ** 4 - 6382868964 * x ** 2 + 666666666;
+list diffs;
+for (int i = 1; i <= nvars (r); i = i + 1)
+  {
+    diffs = insert (diffs, diff (OBJ, var (i)));
+  }
+
+ideal I = 0;
+for (int i = 1; i <= nvars (r); i = i + 1)
+  {
+    I = I + diff (OBJ, var (i));
+  }
+
+print("Ideal I=(d(OBJ)/dx,d(OBJ)/de,d(OBJ)/dR)");
+print (I);
+ideal SI = std (I);
+print("Standard Basis of Ideal I");
+print (SI);
+ring s = 0, (x, e, R), lp;
+setring s;
+ideal j = fglm (r, SI);
+print("Standard Basis in Lexocographic Monomial Ordering");
+j;
+def RS = triang_solve (j, 50);
+setring RS;
+print("List of Solutions (x,e,R)");
+rlist;
+poly OBJ = fetch (r, OBJ);
+ideal I = fetch (r, I);
+print("Objective function OBJ");
+OBJ;
+print ("By substituting the solution (x,e,R) to I and OBJ"); 
+print ("I[1](x,e,R), I[2](x,e,R),I[3](x,e,R),OBJ(x,e,R), ");
+for (i = 1; i <= size (rlist); i = i + 1)
+  {
+    list substv;
+    poly OBJ2 = OBJ;
+    for (int k = 1; k <= nvars (RS); k = k + 1)
+      {
+	OBJ2 = subst (OBJ2, var (k), rlist[i][k]);
+      } substv = insert (substv, OBJ2);
+    for (int l = 1; l <= size (I); l = l + 1)
+      {
+	poly OBJ2 = I[l];
+	for (int k = 1; k <= nvars (RS); k = k + 1)
+	  {
+	    OBJ2 = subst (OBJ2, var (k), rlist[i][k]);
+	  } substv = insert (substv, OBJ2);
+      } 
+    print ("CHECK THE SOLUTION");
+    print (substv);
+    write (":w save_i.txt", rlist);
+  } LIB "rootsmr.lib";
+
+setring r;
+ideal b = qbase (SI);
+matrix mx = matmult (x, b, SI);
+matrix me = matmult (e, b, SI);
+matrix mr = matmult (R, b, SI);
+write (":w saved_mx.txt", string (mx));
+write (":w saved_me.txt", string (me));
+write (":w saved_mr.txt", string (mr));
+write (":w saved_b.txt", string (b));
+quit;
